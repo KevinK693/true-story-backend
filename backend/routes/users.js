@@ -10,6 +10,7 @@ const bcrypt = require("bcrypt");
 const cloudinary = require("cloudinary").v2;
 const fs = require("fs");
 const uniqid = require("uniqid");
+const streamifier = require("streamifier");
 
 
 //Route pour creer un utilisateur
@@ -72,21 +73,13 @@ router.put("/profile", (req, res) => {
 
     user.nickname = req.body.nickname;
 
+    // Cas 1 : fichier image envoyé depuis le front
     if (req.files && req.files.photoFromFront) {
-      const photoPath = `./tmp/${uniqid()}.jpg`;
-      const tmpDir = "./tmp";
-      if (!fs.existsSync(tmpDir)) {
-        fs.mkdirSync(tmpDir);
-      }
-      req.files.photoFromFront.mv(photoPath, (err) => {
-        if (err) {
-          res.json({ result: false, error: "File upload failed" });
-          return;
-        }
+      const photo = req.files.photoFromFront;
 
-        cloudinary.uploader.upload(photoPath, (error, resultCloudinary) => {
-          fs.unlinkSync(photoPath);
-
+      const uploadStream = cloudinary.uploader.upload_stream(
+        { folder: "avatars" },
+        (error, resultCloudinary) => {
           if (error) {
             res.json({ result: false, error: "Cloudinary upload failed" });
             return;
@@ -96,13 +89,19 @@ router.put("/profile", (req, res) => {
           user.save().then(() => {
             res.json({ result: true, url: resultCloudinary.secure_url });
           });
-        });
-      });
+        }
+      );
+
+      streamifier.createReadStream(photo.data).pipe(uploadStream);
+
+    // Cas 2 : une URL d’avatar est directement envoyée
     } else if (req.body.avatarUrl) {
       user.avatar = req.body.avatarUrl;
       user.save().then(() => {
         res.json({ result: true, url: req.body.avatarUrl });
       });
+
+    // Cas 3 : aucune image fournie
     } else {
       res.json({ result: false, error: "No image or avatar provided" });
     }

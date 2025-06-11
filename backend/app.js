@@ -36,5 +36,10 @@ app.use('/games', gamesRouter);
 app.use('/scenes', scenesRouter);
 app.use('/exports', exportsRouter);
 
+app.get("/", (req, res) => {
+    res.send("Bienvenue sur l'API True Story 🎉");
+  });
+  
+
 
 module.exports = app;

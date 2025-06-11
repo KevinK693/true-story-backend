@@ -30,15 +30,16 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
+app.get("/", (req, res) => {
+    res.send("Bienvenue sur l'API True Story 🎉");
+  });
+  
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
 app.use('/games', gamesRouter);
 app.use('/scenes', scenesRouter);
 app.use('/exports', exportsRouter);
 
-app.get("/", (req, res) => {
-    res.send("Bienvenue sur l'API True Story 🎉");
-  });
   
 
 
